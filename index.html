@@ -3,57 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>kouritapp - 学習サポート</title>
+    <title>AI 学習コパイロット</title>
+    <!-- 見た目をきれいにするためのツール (Tailwind CSS & FontAwesome) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* 画面全体のレイアウト */
-        body { font-family: sans-serif; margin: 0; display: flex; height: 100vh; background: #f0f4f8; }
-        
-        /* 左側（タスク＆ツール画面） */
-        .left-panel { flex: 1; padding: 20px; border-right: 1px solid #ccc; display: flex; flex-direction: column; }
-        .task-box { background: #e1f5fe; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 5px solid #0288d1; }
-        .task-box h3 { margin-top: 0; color: #01579b; }
-        .tool-area { flex: 1; border: 1px solid #ccc; border-radius: 8px; padding: 10px; background: #fff; resize: none; font-size: 16px; }
-        
-        /* 右側（AIチャット画面） */
-        .right-panel { width: 350px; padding: 20px; background: #fff; display: flex; flex-direction: column; }
-        .chat-box { flex: 1; overflow-y: auto; border: 1px solid #eee; padding: 10px; margin-bottom: 10px; border-radius: 8px; background: #fafafa; display: flex; flex-direction: column; }
-        .chat-message { margin-bottom: 10px; padding: 10px; border-radius: 8px; max-width: 85%; font-size: 0.9em; line-height: 1.4; }
-        .user-msg { background: #dcf8c6; align-self: flex-end; }
-        .ai-msg { background: #e3f2fd; align-self: flex-start; }
-        
-        /* 入力エリア */
-        .input-area { display: flex; gap: 5px; }
-        input[type="text"] { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 4px; }
-        button { padding: 10px 15px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
-        button:hover { background: #0056b3; }
+        body { font-family: sans-serif; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
     </style>
 </head>
-<body>
-
-    <!-- 左側：作業エリア -->
-    <div class="left-panel">
-        <div class="task-box">
-            <h3>📝 先生からのタスク</h3>
-            <p>今日の目標：地球温暖化の原因について調べ、右側のAIと相談しながら、自分の言葉で下のノートにまとめましょう。</p>
+<body class="bg-slate-50 min-h-screen flex flex-col">
+    
+    <!-- ヘッダー -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-50 p-4 shadow-sm">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <h1 class="font-bold text-xl text-slate-800 flex items-center gap-2">
+                <i class="fa-solid fa-graduation-cap text-blue-500"></i>
+                AI 学習コパイロット
+            </h1>
+            <span class="text-sm font-medium text-slate-500 bg-slate-100 px-3 py-1 rounded-full">先生のタスク × AIサポート</span>
         </div>
-        <h4>作業用ノート（指定ツール）</h4>
-        <textarea class="tool-area" placeholder="ここに調べたことや考えたことを書いてみよう..."></textarea>
-    </div>
+    </header>
 
-    <!-- 右側：AIチャットエリア -->
-    <div class="right-panel">
-        <h3 style="margin-top:0;">🤖 AIアシスタント</h3>
-        <div class="chat-box" id="chatBox">
-            <div class="chat-message ai-msg">こんにちは！今日のタスクで分からないことや、アイデアが欲しい時はなんでも聞いてね。</div>
+    <!-- メイン画面（左右に分かれるレイアウト） -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        <!-- 左側：タスク表示と作業ノート -->
+        <div class="flex flex-col gap-4">
+            
+            <!-- 先生からのタスク -->
+            <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg shadow-sm">
+                <h2 class="font-bold text-blue-800 mb-2 flex items-center gap-2">
+                    <i class="fa-solid fa-clipboard-list"></i> 先生からのタスク
+                </h2>
+                <p class="text-sm text-blue-900 leading-relaxed font-medium">
+                    今日の目標：<br>
+                    「地球温暖化の主な原因」について調べ、右側のAIと相談しながら、下のノートに自分の言葉でまとめましょう。
+                </p>
+            </div>
+            
+            <!-- 作業ノート -->
+            <div class="flex-1 flex flex-col bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden min-h-[400px]">
+                <div class="bg-slate-100 px-4 py-2 border-b border-slate-200 font-semibold text-slate-700 text-sm flex items-center gap-2">
+                    <i class="fa-solid fa-book-open"></i> 作業用ノート
+                </div>
+                <textarea class="flex-1 p-4 w-full resize-none focus:outline-none focus:ring-2 focus:ring-blue-200 custom-scrollbar text-slate-700 leading-relaxed" placeholder="調べたことや、AIと話してわかったことをここに書いていこう！"></textarea>
+            </div>
+            
         </div>
-        <div class="input-area">
-            <input type="text" id="userInput" placeholder="AIに質問する..." onkeypress="handleKeyPress(event)">
-            <button onclick="sendMessage()">送信</button>
-        </div>
-    </div>
 
+        <!-- 右側：AIチャットアシスタント -->
+        <div class="flex flex-col bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden h-[80vh]">
+            <div class="bg-indigo-50 px-4 py-3 border-b border-indigo-100 font-semibold text-indigo-800 text-sm flex items-center gap-2">
+                <i class="fa-solid fa-robot"></i> AI アシスタント
+            </div>
+            
+            <!-- チャット履歴が表示される場所 -->
+            <div id="chatBox" class="flex-1 p-4 overflow-y-auto custom-scrollbar flex flex-col gap-4 bg-slate-50">
+                <!-- 最初のAIの挨拶 -->
+                <div class="flex gap-3">
+                    <div class="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white shrink-0 shadow-sm">
+                        <i class="fa-solid fa-robot text-sm"></i>
+                    </div>
+                    <div class="bg-white border border-slate-200 p-3 rounded-2xl rounded-tl-none shadow-sm text-sm text-slate-700 max-w-[85%] leading-relaxed">
+                        こんにちは！今日のタスクで分からないことや、まとめ方のアイデアが欲しい時はなんでも聞いてね。
+                    </div>
+                </div>
+            </div>
+            
+            <!-- メッセージ入力欄 -->
+            <div class="p-3 bg-white border-t border-slate-200 flex gap-2">
+                <input type="text" id="userInput" class="flex-1 bg-slate-100 border-none rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300" placeholder="AIに質問してみよう..." onkeypress="handleKeyPress(event)">
+                <button onclick="sendMessage()" class="w-10 h-10 rounded-full bg-indigo-500 hover:bg-indigo-600 text-white flex items-center justify-center transition shadow-sm">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- チャットを動かすプログラム -->
     <script>
-        // チャット送信機能
         function sendMessage() {
             const input = document.getElementById('userInput');
             const text = input.value.trim();
@@ -61,20 +93,40 @@
 
             const chatBox = document.getElementById('chatBox');
             
-            // ユーザーの入力テキストを画面に追加
-            chatBox.innerHTML += `<div class="chat-message user-msg">${text}</div>`;
+            // 自分が入力したメッセージを画面に追加
+            chatBox.innerHTML += `
+                <div class="flex gap-3 flex-row-reverse">
+                    <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white shrink-0 shadow-sm">
+                        <i class="fa-solid fa-user text-sm"></i>
+                    </div>
+                    <div class="bg-blue-500 text-white p-3 rounded-2xl rounded-tr-none shadow-sm text-sm max-w-[85%] leading-relaxed">
+                        ${text}
+                    </div>
+                </div>
+            `;
+            
+            // 入力欄を空にして、一番下までスクロール
             input.value = '';
-            chatBox.scrollTop = chatBox.scrollHeight; // 一番下へスクロール
+            chatBox.scrollTop = chatBox.scrollHeight;
 
-            // AIの返答（※今は仮の動きです。後で本物のAIを繋ぎます）
+            // AIの返答（今は仮のメッセージ。後で本物のAPIに繋ぎます！）
             setTimeout(() => {
-                const aiReply = `「${text}」についてだね！いい視点だと思う。ヒントとして、〇〇について調べてみるともっと深まるかもしれないよ。`;
-                chatBox.innerHTML += `<div class="chat-message ai-msg">${aiReply}</div>`;
+                const aiReply = `「${text}」についてだね！いい視点だと思う。まずは二酸化炭素（CO2）がどうやって増えているか調べてみると、もっと分かりやすくまとめられるかもしれないよ。`;
+                chatBox.innerHTML += `
+                    <div class="flex gap-3 mt-1">
+                        <div class="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white shrink-0 shadow-sm">
+                            <i class="fa-solid fa-robot text-sm"></i>
+                        </div>
+                        <div class="bg-white border border-slate-200 p-3 rounded-2xl rounded-tl-none shadow-sm text-sm text-slate-700 max-w-[85%] leading-relaxed">
+                            ${aiReply}
+                        </div>
+                    </div>
+                `;
                 chatBox.scrollTop = chatBox.scrollHeight;
-            }, 1000); // 1秒後に返信
+            }, 1000);
         }
 
-        // Enterキーで送信できる機能
+        // Enterキーでも送信できるようにする
         function handleKeyPress(e) {
             if (e.key === 'Enter') {
                 sendMessage();
