@@ -1,150 +1,109 @@
-// 必要なパッケージ: npm install express cors googleapis groq-sdk dotenv
-require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const { google } = require('googleapis');
-const Groq = require('groq-sdk');
+const { Groq } = require('groq-sdk'); // Groqを使用している場合
 
 const app = express();
-
-// フロントエンドからのリクエストを許可 (GitHub PagesのURL等を環境変数で指定)
-app.use(cors({ origin: process.env.FRONTEND_URL || '*' }));
+app.use(cors());
 app.use(express.json());
 
-// Google OAuth2 クライアントの初期化
+// 環境変数の読み込み
+const CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
+const REDIRECT_URI = process.env.REDIRECT_URI;
+const GROQ_API_KEY = process.env.GROQ_API_KEY;
+
+// OAuth2 クライアントの設定
 const oauth2Client = new google.auth.OAuth2(
-  process.env.GOOGLE_CLIENT_ID,
-  process.env.GOOGLE_CLIENT_SECRET,
-  process.env.REDIRECT_URI || 'http://localhost:3000/auth/google/callback'
+    CLIENT_ID,
+    CLIENT_SECRET,
+    REDIRECT_URI
 );
 
-const SCOPES = [
-  'https://www.googleapis.com/auth/drive.file',
-  'https://www.googleapis.com/auth/spreadsheets',
-  'https://www.googleapis.com/auth/documents',
-  'https://www.googleapis.com/auth/presentations'
-];
-
-// 簡易的なセッション保持用（本番環境ではRedisやDB等の使用を推奨）
-const tokenStore = {}; 
+// Groq SDKの設定
+const groq = new Groq({ apiKey: GROQ_API_KEY });
 
 // 1. Google ログインURLの発行
 app.get('/auth/google', (req, res) => {
-  const url = oauth2Client.generateAuthUrl({
-    access_type: 'offline',
-    scope: SCOPES,
-    prompt: 'consent'
-  });
-  res.redirect(url);
+    const scopes = [
+        'https://www.googleapis.com/auth/drive.file',
+        'https://www.googleapis.com/auth/documents',
+        'https://www.googleapis.com/auth/spreadsheets'
+    ];
+    const url = oauth2Client.generateAuthUrl({
+        access_type: 'offline',
+        scope: scopes,
+        prompt: 'consent'
+    });
+    res.redirect(url);
 });
 
-// 2. Google ログイン後のコールバック処理
+// 2. Google 認証後のコールバック処理
 app.get('/auth/google/callback', async (req, res) => {
-  const { code } = req.query;
-  try {
-    const { tokens } = await oauth2Client.getToken(code);
-    // デモ用: 簡易的にメモリに保存。通常はセッションID等を発行してCookieで管理します
-    tokenStore['demo_user'] = tokens; 
-    
-    // フロントエンドへリダイレクトして完了を通知
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5500';
-    res.redirect(`${frontendUrl}?auth=success`);
-  } catch (error) {
-    console.error('OAuth Error:', error);
-    res.status(500).send('Authentication failed');
-  }
+    const { code } = req.query;
+    try {
+        const { tokens } = await oauth2Client.getToken(code);
+        // 認証成功時、フロントエンド（GitHub Pages）へアクセストークンを渡してリダイレクト
+        const frontendUrl = process.env.FRONTEND_URL || 'https://atyufumi0424-cyber.github.io/kouritapp/';
+        res.redirect(`${frontendUrl}?access_token=${tokens.access_token}`);
+    } catch (error) {
+        console.error('OAuth Error:', error);
+        res.status(500).send('Google Authentication Failed');
+    }
 });
 
-// 3. Groq生成 & Google Workspace連携メインAPI
-app.post('/api/generate-and-sync', async (req, res) => {
-  const { type, prompt, groqApiKey, groqModel, systemPrompt } = req.body;
+// 3. ツール（Docs / Sheets）新規作成 API
+app.post('/api/create-tool', async (req, res) => {
+    const { accessToken, toolType, topic } = req.body;
+    if (!accessToken) return res.status(401).json({ error: 'No access token' });
 
-  // トークンの確認
-  const tokens = tokenStore['demo_user'];
-  if (!tokens) {
-    return res.status(401).json({ error: 'Googleアカウントでログインしていません' });
-  }
+    const auth = new google.auth.OAuth2();
+    auth.setCredentials({ access_token: accessToken });
 
-  oauth2Client.setCredentials(tokens);
-  
-  try {
-    // -----------------------------------------------------
-    // ① Groq API でコンテンツを生成 (バックグラウンド処理)
-    // -----------------------------------------------------
-    const groq = new Groq({ apiKey: groqApiKey || process.env.GROQ_API_KEY });
-    
-    const completion = await groq.chat.completions.create({
-      messages: [
-        { role: 'system', content: systemPrompt || 'あなたは優秀なアシスタントです。' },
-        { role: 'user', content: prompt }
-      ],
-      model: groqModel || 'llama-3.3-70b-versatile',
-      temperature: 0.7,
-    });
+    try {
+        let fileUrl = '';
+        const title = `【課題】${topic || '学習ノート'}`;
 
-    const generatedText = completion.choices[0]?.message?.content || '';
-
-    // -----------------------------------------------------
-    // ② 生成されたテキストを Google Workspace へ保存
-    // -----------------------------------------------------
-    let resultUrl = '';
-    let resultTitle = '';
-
-    if (type === 'docs') {
-      const docs = google.docs({ version: 'v1', auth: oauth2Client });
-      const doc = await docs.documents.create({ requestBody: { title: `自動生成ドキュメント_${Date.now()}` } });
-      
-      await docs.documents.batchUpdate({
-        documentId: doc.data.documentId,
-        requestBody: {
-          requests: [{ insertText: { location: { index: 1 }, text: generatedText } }]
+        if (toolType && (toolType.includes('Sheet') || toolType.includes('シート'))) {
+            // Google Sheets の作成
+            const sheets = google.sheets({ version: 'v4', auth });
+            const response = await sheets.spreadsheets.create({
+                requestBody: { properties: { title } }
+            });
+            fileUrl = `https://docs.google.com/spreadsheets/d/${response.data.spreadsheetId}/edit?rm=embedded`;
+        } else {
+            // デフォルト: Google Docs の作成
+            const docs = google.docs({ version: 'v1', auth });
+            const response = await docs.documents.create({
+                requestBody: { title }
+            });
+            fileUrl = `https://docs.google.com/document/d/${response.data.documentId}/edit?rm=embedded`;
         }
-      });
-      resultUrl = `https://docs.google.com/document/d/${doc.data.documentId}/edit`;
-      resultTitle = doc.data.title;
 
-    } else if (type === 'sheets') {
-      const sheets = google.sheets({ version: 'v4', auth: oauth2Client });
-      const spreadsheet = await sheets.spreadsheets.create({
-        requestBody: { properties: { title: `自動生成シート_${Date.now()}` } }
-      });
-      
-      // テキストを行ごとに簡易分割してスプレッドシートに書き込み
-      const rows = generatedText.split('\n').map(line => [line]);
-      await sheets.spreadsheets.values.update({
-        spreadsheetId: spreadsheet.data.spreadsheetId,
-        range: 'Sheet1!A1',
-        valueInputOption: 'RAW',
-        requestBody: { values: rows }
-      });
-      resultUrl = spreadsheet.data.spreadsheetUrl;
-      resultTitle = spreadsheet.data.properties.title;
-
-    } else if (type === 'slides') {
-      // スライドは構造が複雑なため、今回は空のプレゼンを作成し、ノート部分等に記載する想定
-      const slides = google.slides({ version: 'v1', auth: oauth2Client });
-      const presentation = await slides.presentations.create({
-        requestBody: { title: `自動生成スライド_${Date.now()}` }
-      });
-      resultUrl = `https://docs.google.com/presentation/d/${presentation.data.presentationId}/edit`;
-      resultTitle = presentation.data.title;
+        res.json({ embedUrl: fileUrl });
+    } catch (error) {
+        console.error('Create Tool Error:', error);
+        res.status(500).json({ error: 'Failed to create tool file' });
     }
+});
 
-    // 成功レスポンスをフロントエンドに返す
-    res.json({
-      success: true,
-      text: generatedText,
-      workspaceUrl: resultUrl,
-      workspaceTitle: resultTitle
-    });
-
-  } catch (error) {
-    console.error('API Error:', error);
-    res.status(500).json({ error: error.message });
-  }
+// 4. AI チャット API
+app.post('/api/chat', async (req, res) => {
+    const { message } = req.body;
+    try {
+        const completion = await groq.chat.completions.create({
+            messages: [{ role: 'user', content: message }],
+            model: 'llama-3.3-70b-versatile',
+        });
+        const reply = completion.choices[0]?.message?.content || '応答を取得できませんでした。';
+        res.json({ reply });
+    } catch (error) {
+        console.error('AI Error:', error);
+        res.status(500).json({ reply: 'AIサーバーでエラーが発生しました。' });
+    }
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+    console.log(`Server is running on port ${PORT}`);
 });
