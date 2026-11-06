@@ -93,7 +93,7 @@ app.post('/api/chat', async (req, res) => {
     try {
         const completion = await groq.chat.completions.create({
             messages: [{ role: 'user', content: message }],
-            model: 'llama-3.3-70b-versatile',
+            model: 'llama-3.1-70b-versatile',
         });
         const reply = completion.choices[0]?.message?.content || '応答を取得できませんでした。';
         res.json({ reply });
