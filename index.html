@@ -6,7 +6,6 @@
   <title>AI Workspace Copilot</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    /* ブラウザ全体のスクロールを無効化し、アプリ感のある全画面配置にする */
     html, body {
       width: 100%;
       height: 100%;
@@ -18,7 +17,7 @@
 </head>
 <body class="bg-slate-100 text-slate-800 flex flex-col h-screen w-screen">
 
-  <!-- ヘッダー（高さ固定） -->
+  <!-- ヘッダー -->
   <header class="bg-white border-b border-slate-200 px-6 py-2.5 flex justify-between items-center shrink-0 shadow-sm z-10">
     <div class="flex items-center space-x-3">
       <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold text-lg">
@@ -38,14 +37,14 @@
     </div>
   </header>
 
-  <!-- メインコンテンツ（余白をゼロにして全画面を最大活用） -->
-  <main class="flex-1 flex overflow-hidden p-2 gap-2 h-[calc(100vh-57px)] w-full">
+  <!-- メインコンテンツ（全画面左右分割） -->
+  <main class="flex-1 flex overflow-hidden p-2 gap-2 w-full h-[calc(100vh-57px)]">
     
-    <!-- 左パネル：お題 ＋ 作業スペース（画面幅の 70%） -->
+    <!-- 左パネル：お題 ＋ 作業スペース（70%） -->
     <section class="w-[70%] flex flex-col bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden h-full">
       
-      <!-- お題ヘッダー（薄型化） -->
-      <div class="px-4 py-2 bg-slate-50 border-b border-slate-200 shrink-0 flex justify-between items-center">
+      <!-- お題ヘッダー -->
+      <div class="px-4 py-2.5 bg-slate-50 border-b border-slate-200 shrink-0 flex justify-between items-center">
         <div class="flex items-center gap-3">
           <span class="text-xs font-semibold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">
             今日のお題
@@ -59,7 +58,7 @@
         </div>
       </div>
 
-      <!-- 作業スペース（iframeを最大表示） -->
+      <!-- 作業スペース（iframe埋め込み） -->
       <div class="flex-1 relative bg-slate-200 w-full h-full">
         <iframe 
           id="workspace-frame"
@@ -71,13 +70,13 @@
 
     </section>
 
-    <!-- 右パネル：AI メンター チャット（画面幅の 30%） -->
+    <!-- 右パネル：AI メンター チャット（30%） -->
     <section class="w-[30%] flex flex-col bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden h-full min-w-[300px]">
       
       <!-- チャットヘッダー -->
       <div class="px-4 py-2.5 bg-slate-50 border-b border-slate-200 shrink-0 flex items-center justify-between">
         <h3 class="font-bold text-slate-700 text-sm flex items-center gap-2">
-          💡 AI メ mentor チャット
+          💡 AI メンター チャット
         </h3>
       </div>
 
@@ -112,19 +111,20 @@
 
   </main>
 
-  <!-- Firebase & App Scripts -->
+  <!-- Firebase Script -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
-      apiKey: "YOUR_API_KEY",
-      authDomain: "ai-base-513801.firebaseapp.com",
-      projectId: "ai-base-513801",
-      storageBucket: "ai-base-513801.appspot.com",
-      messagingSenderId: "YOUR_SENDER_ID",
-      appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyAS6jKvmRaEMyrobj3kFTHLdxlw1zWsKdQ",
+  authDomain: "kouritsuapp-f4431.firebaseapp.com",
+  projectId: "kouritsuapp-f4431",
+  storageBucket: "kouritsuapp-f4431.firebasestorage.app",
+  messagingSenderId: "1006332335773",
+  appId: "1:1006332335773:web:48c1fce80f67a099426674",
+  measurementId: "G-S2YZN1CWLF"
     };
 
     const app = initializeApp(firebaseConfig);
@@ -143,11 +143,14 @@
     const chatHistory = document.getElementById('chat-history');
     const iframe = document.getElementById('workspace-frame');
 
+    // 埋め込み可能なGoogle Docs URL
+    const docsEmbedUrl = "https://docs.google.com/document/create?embedded=true";
+
     loginBtn?.addEventListener('click', async () => {
       try {
         const result = await signInWithPopup(auth, provider);
         if (result?.user) {
-          iframe.src = `https://docs.google.com/document/u/0/?t=${Date.now()}`;
+          iframe.src = docsEmbedUrl;
         }
       } catch (error) {
         console.error("Login Error:", error);
@@ -159,7 +162,7 @@
         loginBtn?.classList.add('hidden');
         loginBadge?.classList.remove('hidden');
         if (!iframe.src || iframe.src === 'about:blank') {
-          iframe.src = `https://docs.google.com/document/u/0/?t=${Date.now()}`;
+          iframe.src = docsEmbedUrl;
         }
       } else {
         loginBtn?.classList.remove('hidden');
@@ -181,7 +184,13 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ message })
         });
+        
         const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || 'サーバーエラーが発生しました');
+        }
+
         appendMessage(data.reply || "応答を取得できませんでした。", 'ai');
 
         if (auth.currentUser) {
@@ -194,7 +203,7 @@
         }
       } catch (err) {
         console.error("API Error:", err);
-        appendMessage("通信エラーが発生しました。", 'ai');
+        appendMessage(`通信エラー: ${err.message}`, 'ai');
       }
     });
 
