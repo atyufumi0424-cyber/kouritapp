@@ -6,15 +6,20 @@
   <title>AI Workspace Copilot</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    body {
+    /* ブラウザ全体のスクロールを無効化し、アプリ感のある全画面配置にする */
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
       overflow: hidden;
     }
   </style>
 </head>
-<body class="bg-slate-50 text-slate-800 h-screen flex flex-col">
+<body class="bg-slate-100 text-slate-800 flex flex-col h-screen w-screen">
 
-  <!-- ヘッダー -->
-  <header class="bg-white border-b border-slate-200 px-6 py-3 flex justify-between items-center shrink-0 shadow-sm">
+  <!-- ヘッダー（高さ固定） -->
+  <header class="bg-white border-b border-slate-200 px-6 py-2.5 flex justify-between items-center shrink-0 shadow-sm z-10">
     <div class="flex items-center space-x-3">
       <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold text-lg">
         🤖
@@ -33,60 +38,60 @@
     </div>
   </header>
 
-  <!-- メインコンテンツ（全画面左右分割） -->
-  <main class="flex-1 flex overflow-hidden p-3 gap-3">
+  <!-- メインコンテンツ（余白をゼロにして全画面を最大活用） -->
+  <main class="flex-1 flex overflow-hidden p-2 gap-2 h-[calc(100vh-57px)] w-full">
     
-    <!-- 左パネル：お題 ＋ 作業スペース（70%） -->
-    <section class="w-7/10 flex flex-col bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex-1">
+    <!-- 左パネル：お題 ＋ 作業スペース（画面幅の 70%） -->
+    <section class="w-[70%] flex flex-col bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden h-full">
       
-      <!-- お題ヘッダー -->
-      <div class="p-4 bg-slate-50/80 border-b border-slate-200 shrink-0 flex justify-between items-center">
-        <div>
-          <span class="text-xs font-semibold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">
+      <!-- お題ヘッダー（薄型化） -->
+      <div class="px-4 py-2 bg-slate-50 border-b border-slate-200 shrink-0 flex justify-between items-center">
+        <div class="flex items-center gap-3">
+          <span class="text-xs font-semibold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">
             今日のお題
           </span>
-          <h2 id="topic-title" class="text-base font-bold text-slate-800 mt-1">
+          <h2 id="topic-title" class="text-sm font-bold text-slate-800">
             AIを使った未来の学校のアイデアを考えよう
           </h2>
         </div>
-        <div class="text-xs text-slate-500 bg-white border border-slate-200 px-2.5 py-1 rounded-md">
+        <div class="text-xs text-slate-500 bg-white border border-slate-200 px-2 py-0.5 rounded">
           指定ツール: <span id="tool-name" class="font-semibold text-slate-700">Google Docs</span>
         </div>
       </div>
 
-      <!-- 作業スペース（Google Docs / Sheets 埋め込み） -->
-      <div class="flex-1 relative bg-slate-100">
+      <!-- 作業スペース（iframeを最大表示） -->
+      <div class="flex-1 relative bg-slate-200 w-full h-full">
         <iframe 
           id="workspace-frame"
           src="" 
-          class="w-full h-full border-0"
+          class="w-full h-full border-0 absolute inset-0"
           allow="autoplay"
         ></iframe>
       </div>
 
     </section>
 
-    <!-- 右パネル：AI メンター チャット（30%） -->
-    <section class="w-3/10 flex flex-col bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden min-w-[320px]">
+    <!-- 右パネル：AI メンター チャット（画面幅の 30%） -->
+    <section class="w-[30%] flex flex-col bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden h-full min-w-[300px]">
       
       <!-- チャットヘッダー -->
-      <div class="p-3.5 bg-slate-50/80 border-b border-slate-200 shrink-0 flex items-center justify-between">
+      <div class="px-4 py-2.5 bg-slate-50 border-b border-slate-200 shrink-0 flex items-center justify-between">
         <h3 class="font-bold text-slate-700 text-sm flex items-center gap-2">
-          💡 AI メンター チャット
+          💡 AI メ mentor チャット
         </h3>
       </div>
 
       <!-- チャット履歴エリア -->
-      <div id="chat-history" class="flex-1 p-4 overflow-y-auto space-y-3 bg-slate-50/30">
+      <div id="chat-history" class="flex-1 p-3 overflow-y-auto space-y-3 bg-slate-50/50">
         <div class="flex flex-col items-start">
-          <div class="max-w-[85%] bg-indigo-50 text-indigo-900 border border-indigo-100 rounded-2xl rounded-tl-none p-3 text-sm leading-relaxed">
+          <div class="max-w-[90%] bg-indigo-50 text-indigo-900 border border-indigo-100 rounded-2xl rounded-tl-none p-3 text-sm leading-relaxed">
             こんにちは！今日のお題について分からないことやアイデアの相談があれば何でも聞いてね！
           </div>
         </div>
       </div>
 
       <!-- メッセージ入力エリア -->
-      <div class="p-3 bg-white border-t border-slate-200 shrink-0">
+      <div class="p-2.5 bg-white border-t border-slate-200 shrink-0">
         <form id="chat-form" class="flex gap-2">
           <input 
             type="text" 
@@ -96,7 +101,7 @@
           >
           <button 
             type="submit"
-            class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2 rounded-lg text-sm transition-colors shrink-0 flex items-center justify-center"
+            class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2 rounded-lg text-sm transition-colors shrink-0"
           >
             送信
           </button>
@@ -107,21 +112,19 @@
 
   </main>
 
-  <!-- Firebase & アプリケーションスクリプト -->
+  <!-- Firebase & App Scripts -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    // Firebase 設定（環境に合わせて保持）
     const firebaseConfig = {
-    apiKey: "AIzaSyAS6jKvmRaEMyrobj3kFTHLdxlw1zWsKdQ",
-  authDomain: "kouritsuapp-f4431.firebaseapp.com",
-  projectId: "kouritsuapp-f4431",
-  storageBucket: "kouritsuapp-f4431.firebasestorage.app",
-  messagingSenderId: "1006332335773",
-  appId: "1:1006332335773:web:48c1fce80f67a099426674",
-  measurementId: "G-S2YZN1CWLF"
+      apiKey: "YOUR_API_KEY",
+      authDomain: "ai-base-513801.firebaseapp.com",
+      projectId: "ai-base-513801",
+      storageBucket: "ai-base-513801.appspot.com",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID"
     };
 
     const app = initializeApp(firebaseConfig);
@@ -129,7 +132,6 @@
     const db = getFirestore(app);
     const provider = new GoogleAuthProvider();
 
-    // OAuth スコープの定義
     provider.addScope('https://www.googleapis.com/auth/drive.file');
     provider.addScope('https://www.googleapis.com/auth/documents');
     provider.addScope('https://www.googleapis.com/auth/spreadsheets');
@@ -141,23 +143,17 @@
     const chatHistory = document.getElementById('chat-history');
     const iframe = document.getElementById('workspace-frame');
 
-    // Google Auth ログイン処理
     loginBtn?.addEventListener('click', async () => {
       try {
         const result = await signInWithPopup(auth, provider);
-        const credential = GoogleAuthProvider.credentialFromResult(result);
-        const token = credential?.accessToken;
-
-        if (token) {
-          // デフォルト表示としてGoogle Docs新規ドキュメント等の表示を設定
+        if (result?.user) {
           iframe.src = `https://docs.google.com/document/u/0/?t=${Date.now()}`;
         }
       } catch (error) {
-        console.error("ログインエラー:", error);
+        console.error("Login Error:", error);
       }
     });
 
-    // ログイン状態監視
     onAuthStateChanged(auth, (user) => {
       if (user) {
         loginBtn?.classList.add('hidden');
@@ -171,29 +167,23 @@
       }
     });
 
-    // チャット送信処理 ＆ Renderバックエンド通信
     chatForm?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const message = chatInput.value.trim();
       if (!message) return;
 
-      // ユーザーメッセージ表示
       appendMessage(message, 'user');
       chatInput.value = '';
 
       try {
-        // RenderバックエンドへAIリクエスト送信
         const res = await fetch('https://kouritapp.onrender.com/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ message })
         });
         const data = await res.json();
-        
-        // AIの返答を表示
         appendMessage(data.reply || "応答を取得できませんでした。", 'ai');
 
-        // Firestoreにログ保存
         if (auth.currentUser) {
           await addDoc(collection(db, "tasks"), {
             uid: auth.currentUser.uid,
@@ -203,7 +193,7 @@
           });
         }
       } catch (err) {
-        console.error("Chat API Error:", err);
+        console.error("API Error:", err);
         appendMessage("通信エラーが発生しました。", 'ai');
       }
     });
@@ -214,7 +204,7 @@
       wrapper.className = `flex flex-col items-${isUser ? 'end' : 'start'}`;
       
       const msgDiv = document.createElement('div');
-      msgDiv.className = `max-w-[85%] p-3 text-sm leading-relaxed rounded-2xl ${
+      msgDiv.className = `max-w-[90%] p-3 text-sm leading-relaxed rounded-2xl ${
         isUser 
           ? 'bg-indigo-600 text-white rounded-tr-none' 
           : 'bg-indigo-50 text-indigo-900 border border-indigo-100 rounded-tl-none'
