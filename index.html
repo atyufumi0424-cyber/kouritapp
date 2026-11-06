@@ -28,4 +28,185 @@
         <div id="auth-status">
             <button id="google-login-btn" onclick="loginGoogle()" class="bg-white hover:bg-gray-50 text-gray-700 font-semibold py-2 px-4 border border-gray-300 rounded-lg shadow-sm flex items-center space-x-2 transition">
                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-5 h-5" alt="Google">
-                <span>Google
+                <span>Googleで連携する</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- メインコンテンツ（スプリットビュー） -->
+    <main class="flex-1 p-6 grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-7xl mx-auto w-full">
+        
+        <!-- 左側：お題 ＆ 作業ツールエリア -->
+        <section class="flex flex-col gap-4">
+            <!-- 今日のお題カード -->
+            <div class="glass p-5 rounded-2xl shadow-sm border border-indigo-100">
+                <span class="text-xs font-semibold uppercase tracking-wider text-indigo-500 bg-indigo-50 px-2.5 py-1 rounded-md">今日のお題</span>
+                <h2 id="task-topic" class="text-lg font-bold text-gray-800 mt-2">読み込み中...</h2>
+                <div class="mt-2 text-sm text-gray-500 flex items-center gap-2">
+                    <span>指定ツール:</span>
+                    <span id="task-tool" class="font-medium text-purple-600 bg-purple-50 px-2 py-0.5 rounded">---</span>
+                </div>
+            </div>
+
+            <!-- Googleツール埋め込み表示エリア -->
+            <div class="glass flex-1 p-4 rounded-2xl shadow-sm flex flex-col min-h-[500px]">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="font-bold text-gray-700 flex items-center gap-2">
+                        📝 作業スペース
+                    </h3>
+                    <span id="tool-status-badge" class="text-xs text-gray-400">未連携</span>
+                </div>
+
+                <!-- Googleツールが読み込まれるiframe枠 -->
+                <div id="workspace-container" class="flex-1 w-full bg-gray-50 rounded-xl border border-gray-200 flex items-center justify-center overflow-hidden">
+                    <p id="placeholder-text" class="text-gray-400 text-sm text-center px-4">
+                        右上の「Googleで連携する」ボタンを押してログインすると、<br>自動で作業ツールが読み込まれます。
+                    </p>
+                    <iframe id="google-iframe" class="w-full h-full border-none hidden"></iframe>
+                </div>
+            </div>
+        </section>
+
+        <!-- 右側：AIチャットパネル -->
+        <section class="glass p-5 rounded-2xl shadow-sm flex flex-col h-[650px] border border-purple-100">
+            <div class="border-b pb-3 mb-3 flex items-center gap-2">
+                <span class="text-xl">💡</span>
+                <h3 class="font-bold text-gray-800">AI メ mentor チャット</h3>
+            </div>
+
+            <!-- チャット履歴 -->
+            <div id="chat-box" class="flex-1 overflow-y-auto space-y-3 pr-2 text-sm">
+                <div class="bg-indigo-50 text-indigo-900 p-3 rounded-xl max-w-[85%]">
+                    こんにちは！今日のお題について分からないことやアイデアの相談があれば何でも聞いてね！
+                </div>
+            </div>
+
+            <!-- チャット入力欄 -->
+            <div class="mt-4 flex gap-2">
+                <input type="text" id="chat-input" placeholder="AIに質問してみよう..." 
+                       class="flex-1 border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white/80">
+                <button onclick="sendMessage()" 
+                        class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-5 py-2.5 rounded-xl transition text-sm shadow-md">
+                    送信
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // --- 設定値 ---
+        const RENDER_API_URL = "https://kouritapp.onrender.com";
+
+        // Firebase初期化 (お使いのfirebaseConfigに置き換えてください)
+        const firebaseConfig = {
+   apiKey: "AIzaSyAS6jKvmRaEMyrobj3kFTHLdxlw1zWsKdQ",
+  authDomain: "kouritsuapp-f4431.firebaseapp.com",
+  projectId: "kouritsuapp-f4431",
+  storageBucket: "kouritsuapp-f4431.firebasestorage.app",
+  messagingSenderId: "1006332335773",
+  appId: "1:1006332335773:web:48c1fce80f67a099426674",
+  measurementId: "G-S2YZN1CWLF"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        let currentTopic = "";
+        let currentTool = "";
+        let accessToken = null;
+
+        // 1. Firebaseから最新のお題を取得
+        db.collection("tasks").limit(1).get().then((querySnapshot) => {
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                currentTopic = data.topic || "お題がありません";
+                currentTool = data.tool || "Google Docs";
+                document.getElementById("task-topic").innerText = currentTopic;
+                document.getElementById("task-tool").innerText = currentTool;
+            });
+        }).catch((error) => {
+            console.error("Firestore Error:", error);
+            document.getElementById("task-topic").innerText = "お題の読み込みに失敗しました";
+        });
+
+        // 2. Google ログイン処理
+        function loginGoogle() {
+            window.location.href = `${RENDER_API_URL}/auth/google`;
+        }
+
+        // 3. URLからアクセストークンを取得してツール作成を実行
+        window.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            accessToken = urlParams.get('access_token');
+
+            if (accessToken) {
+                document.getElementById("auth-status").innerHTML = `<span class="text-xs text-green-600 bg-green-50 font-bold px-3 py-1.5 rounded-lg border border-green-200">✓ Google連携済み</span>`;
+                document.getElementById("tool-status-badge").innerText = "ツール作成中...";
+                
+                // バックエンドでファイルを作成して埋め込み表示
+                fetch(`${RENDER_API_URL}/api/create-tool`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        accessToken: accessToken,
+                        toolType: currentTool,
+                        topic: currentTopic
+                    })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.embedUrl) {
+                        const iframe = document.getElementById("google-iframe");
+                        const placeholder = document.getElementById("placeholder-text");
+                        iframe.src = data.embedUrl;
+                        iframe.classList.remove("hidden");
+                        placeholder.classList.add("hidden");
+                        document.getElementById("tool-status-badge").innerText = "編集可能";
+                    }
+                })
+                .catch(err => {
+                    console.error("Create Tool Error:", err);
+                    document.getElementById("tool-status-badge").innerText = "読み込み失敗";
+                });
+            }
+        });
+
+        // 4. AI チャット送信処理
+        async function sendMessage() {
+            const input = document.getElementById("chat-input");
+            const message = input.value.trim();
+            if (!message) return;
+
+            const chatBox = document.getElementById("chat-box");
+            
+            // ユーザーのメッセージ表示
+            const userMsg = document.createElement("div");
+            userMsg.className = "bg-purple-600 text-white p-3 rounded-xl max-w-[85%] ml-auto text-sm";
+            userMsg.innerText = message;
+            chatBox.appendChild(userMsg);
+            input.value = "";
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            // AIの応答待ち表示
+            const loadingMsg = document.createElement("div");
+            loadingMsg.className = "bg-gray-100 text-gray-500 p-3 rounded-xl max-w-[85%] text-sm";
+            loadingMsg.innerText = "考え中...";
+            chatBox.appendChild(loadingMsg);
+
+            try {
+                const response = await fetch(`${RENDER_API_URL}/api/chat`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ message: message })
+                });
+                const data = await response.json();
+                loadingMsg.className = "bg-indigo-50 text-indigo-900 p-3 rounded-xl max-w-[85%] text-sm";
+                loadingMsg.innerText = data.reply;
+            } catch (error) {
+                loadingMsg.innerText = "エラーが発生しました。もう一度試してください。";
+            }
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+    </script>
+</body>
+</html>
