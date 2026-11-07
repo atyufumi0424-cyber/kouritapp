@@ -147,28 +147,28 @@
   measurementId: "G-S2YZN1CWLF"
     };
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-    const provider = new GoogleAuthProvider();
+const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      const db = getFirestore(app);
+      const provider = new GoogleAuthProvider();
+      provider.addScope('https://www.googleapis.com/auth/drive.file');
+      provider.addScope('https://www.googleapis.com/auth/documents');
+      provider.addScope('https://www.googleapis.com/auth/spreadsheets');
 
-    provider.addScope('https://www.googleapis.com/auth/drive.file');
-    provider.addScope('https://www.googleapis.com/auth/documents');
-    provider.addScope('https://www.googleapis.com/auth/spreadsheets');
-// ログイン状態の監視とUI更新
-// DOM要素の取得
-      const loginBtn = document.querySelector('button');
+      // DOM要素の取得（宣言は1箇所のみ）
+      const loginBtn = document.getElementById('login-btn') || document.querySelector('button');
+      const loginBadge = document.getElementById('login-badge');
       const iframe = document.getElementById('workspace-frame');
       const docsEmbedUrl = "https://docs.google.com/document/create?embedded=true";
 
-      // 1. ボタンをクリックした時の処理
+      // 1. ログインボタン押下時の処理
       if (loginBtn) {
         loginBtn.onclick = () => {
           signInWithRedirect(auth, provider);
         };
       }
 
-      // 2. ログイン状態の自動監視とUI切り替え
+      // 2. ログイン状態の自動監視とUI切替
       onAuthStateChanged(auth, (user) => {
         if (user) {
           console.log("ログイン中のユーザー:", user);
@@ -176,13 +176,14 @@
             loginBtn.innerText = '✓ Google連携済み';
             loginBtn.className = 'px-4 py-2 text-sm font-medium text-green-700 bg-green-100 rounded-lg border border-green-300 flex items-center gap-2 shadow-sm';
           }
+          if (loginBadge) loginBadge.classList.remove('hidden');
           if (iframe && (!iframe.src || iframe.src === 'about:blank')) {
             iframe.src = docsEmbedUrl;
           }
         }
       });
 
-      // 3. リダイレクト結果の受け取り
+      // 3. リダイレクト結果の処理
       getRedirectResult(auth)
         .then((result) => {
           if (result) {
