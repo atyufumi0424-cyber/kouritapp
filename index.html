@@ -155,13 +155,14 @@ const app = initializeApp(firebaseConfig);
       provider.addScope('https://www.googleapis.com/auth/documents');
       provider.addScope('https://www.googleapis.com/auth/spreadsheets');
 
-      // DOM要素の取得（宣言は1箇所のみ）
-      const loginBtn = document.getElementById('login-btn') || document.querySelector('button');
-      const loginBadge = document.getElementById('login-badge');
-      const iframe = document.getElementById('workspace-frame');
-      const docsEmbedUrl = "https://docs.google.com/document/create?embedded=true";
-
-      // 1. ログインボタン押下時の処理
+// DOM要素の取得（宣言は1箇所のみ）
+const loginBtn = document.getElementById('login-btn') || document.querySelector('button');
+const loginBadge = document.getElementById('login-badge');
+const chatForm = document.getElementById('chat-form');
+const chatInput = document.getElementById('chat-input');
+const chatHistory = document.getElementById('chat-history');
+const iframe = document.getElementById('workspace-frame');
+const docsEmbedUrl = "https://docs.google.com/document/create?embedded=true";
       if (loginBtn) {
         loginBtn.onclick = () => {
           signInWithRedirect(auth, provider);
