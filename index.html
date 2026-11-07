@@ -193,47 +193,7 @@ const app = initializeApp(firebaseConfig);
         .catch((error) => {
           console.error("リダイレクトエラー:", error);
         });
-    const loginBtn = document.getElementById('login-btn');
-    const loginBadge = document.getElementById('login-badge');
-    const chatForm = document.getElementById('chat-form');
-    const chatInput = document.getElementById('chat-input');
-    const chatHistory = document.getElementById('chat-history');
-    const iframe = document.getElementById('workspace-frame');
 
-    const docsEmbedUrl = "https://docs.google.com/document/create?embedded=true";
-
-    // 1. 連携ボタンを押したときの処理
-    loginBtn?.addEventListener('click', () => {
-      signInWithRedirect(auth, provider);
-    });
-
-    // 2. Google認証から戻ってきた時のデータ受け取り
-    getRedirectResult(auth)
-      .then((result) => {
-        if (result?.user) {
-          iframe.src = docsEmbedUrl;
-        }
-      })
-      .catch((error) => {
-        console.error("Redirect Result Error:", error);
-      });
-
-    // 3. ログイン状態の監視
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        loginBtn?.classList.add('hidden');
-        loginBadge?.classList.remove('hidden');
-        loginBadge?.classList.add('flex');
-        
-        if (!iframe.src || iframe.src === 'about:blank' || iframe.src === window.location.href) {
-          iframe.src = docsEmbedUrl;
-        }
-      } else {
-        loginBtn?.classList.remove('hidden');
-        loginBadge?.classList.add('hidden');
-        loginBadge?.classList.remove('flex');
-      }
-    });
 
     // 4. AI チャット送信処理
     chatForm?.addEventListener('submit', async (e) => {
