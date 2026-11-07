@@ -155,7 +155,25 @@
     provider.addScope('https://www.googleapis.com/auth/drive.file');
     provider.addScope('https://www.googleapis.com/auth/documents');
     provider.addScope('https://www.googleapis.com/auth/spreadsheets');
+// ログイン状態の監視とUI更新
+      onAuthStateChanged(auth, (user) => {
+        if (user) {
+          console.log("ログイン中のユーザー:", user);
+          if (loginBtn) loginBtn.classList.add('hidden');
+          if (loginBadge) loginBadge.classList.remove('hidden');
+          if (iframe) iframe.src = docsEmbedUrl;
+        }
+      });
 
+      getRedirectResult(auth)
+        .then((result) => {
+          if (result) {
+            console.log("リダイレクト成功:", result.user);
+          }
+        })
+        .catch((error) => {
+          console.error("リダイレクトエラー:", error);
+        });
     const loginBtn = document.getElementById('login-btn');
     const loginBadge = document.getElementById('login-badge');
     const chatForm = document.getElementById('chat-form');
