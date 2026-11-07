@@ -87,7 +87,7 @@
           
           <div class="p-4 bg-slate-50/80 border-b border-slate-200 shrink-0">
             <h3 class="font-bold text-slate-700 text-sm flex items-center gap-2">
-              💡 AI メ mentor チャット
+              💡 AI メンター チャット
             </h3>
           </div>
 
@@ -128,17 +128,23 @@
   <!-- Firebase & App Scripts -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-   import { getAuth, GoogleAuthProvider, signInWithRedirect, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { 
+      getAuth, 
+      GoogleAuthProvider, 
+      signInWithRedirect, 
+      getRedirectResult, 
+      onAuthStateChanged 
+    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+    // Firebase 設定（ご自身のキー・設定値を貼り付けてください）
     const firebaseConfig = {
-    apiKey: "AIzaSyAS6jKvmRaEMyrobj3kFTHLdxlw1zWsKdQ",
-  authDomain: "kouritsuapp-f4431.firebaseapp.com",
-  projectId: "kouritsuapp-f4431",
-  storageBucket: "kouritsuapp-f4431.firebasestorage.app",
-  messagingSenderId: "1006332335773",
-  appId: "1:1006332335773:web:48c1fce80f67a099426674",
-  measurementId: "G-S2YZN1CWLF"
+      apiKey: "YOUR_API_KEY",
+      authDomain: "kouritsuapp-f4431.firebaseapp.com",
+      projectId: "kouritsuapp-f4431",
+      storageBucket: "kouritsuapp-f4431.appspot.com",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID"
     };
 
     const app = initializeApp(firebaseConfig);
@@ -157,13 +163,23 @@
     const chatHistory = document.getElementById('chat-history');
     const iframe = document.getElementById('workspace-frame');
 
-    // CSPブロックを抑止するGoogle Docs生成URL
     const docsEmbedUrl = "https://docs.google.com/document/create?embedded=true";
 
-     loginBtn?.addEventListener('click', () => {
-  signInWithRedirect(auth, provider);
-});
+    // 1. ポップアップブロックを回避するためリダイレクト方式で認証を実行
+    loginBtn?.addEventListener('click', () => {
+      signInWithRedirect(auth, provider);
+    });
 
+    // 2. リダイレクトから戻ってきた際の結果を処理
+    getRedirectResult(auth).then((result) => {
+      if (result?.user) {
+        iframe.src = docsEmbedUrl;
+      }
+    }).catch((error) => {
+      console.error("Redirect Auth Error:", error);
+    });
+
+    // 3. ログイン状態の自動監視
     onAuthStateChanged(auth, (user) => {
       if (user) {
         loginBtn?.classList.add('hidden');
@@ -179,6 +195,7 @@
       }
     });
 
+    // 4. AIチャット送信処理
     chatForm?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const message = chatInput.value.trim();
