@@ -128,7 +128,7 @@
   <!-- Firebase & App Scripts -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+   import { getAuth, GoogleAuthProvider, signInWithRedirect, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -160,16 +160,9 @@
     // CSPブロックを抑止するGoogle Docs生成URL
     const docsEmbedUrl = "https://docs.google.com/document/create?embedded=true";
 
-    loginBtn?.addEventListener('click', async () => {
-      try {
-        const result = await signInWithPopup(auth, provider);
-        if (result?.user) {
-          iframe.src = docsEmbedUrl;
-        }
-      } catch (error) {
-        console.error("Login Error:", error);
-      }
-    });
+     loginBtn?.addEventListener('click', () => {
+  signInWithRedirect(auth, provider);
+});
 
     onAuthStateChanged(auth, (user) => {
       if (user) {
