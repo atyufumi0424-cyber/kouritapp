@@ -100,28 +100,25 @@
   </main>
 
   <!-- Firebase & スクリプト -->
-  <script type="module">
+<script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
-const firebaseConfig = {
-apiKey: "AIzaSyC8nYLbZ0MNbnC_hfJ9uJirlaYGWnOMSBY",
-authDomain: "kouritsuapp-f4431.firebaseapp.com",
-projectId: "kouritsuapp-f4431",
-storageBucket: "kouritsuapp-f4431.firebasestorage.app",
-messagingSenderId: "1006332335773",
-appId: "1:1006332335773:web:48c1fce80f67a099426674",
-measurementId: "G-S2YZN1CWLF"
-};
+      apiKey: "AIzaSyAS6jKvmRaEMYrobj3KFTHDxlw1zWsKdQ",
+      authDomain: "kouritsuapp-f4431.firebaseapp.com",
+      projectId: "kouritsuapp-f4431",
+      storageBucket: "kouritsuapp-f4431.firebasestorage.app",
+      messagingSenderId: "1006332335773",
+      appId: "1:1006332335773:web:48c1fce80f67a099426674",
+      measurementId: "G-S2YZN1CWLF"
     };
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
     const provider = new GoogleAuthProvider();
-    provider.setCustomParameters({ prompt: 'select_account' });
 
     const loginBtn = document.getElementById('login-btn');
     const loginBadge = document.getElementById('login-badge');
@@ -134,7 +131,7 @@ measurementId: "G-S2YZN1CWLF"
     // ログイン状態監視
     onAuthStateChanged(auth, (user) => {
       if (user) {
-        console.log("ログイン成功:", user.displayName);
+        console.log("ログイン中:", user.displayName);
         if (loginBtn) loginBtn.classList.add('hidden');
         if (loginBadge) loginBadge.classList.remove('hidden');
         if (iframe && (!iframe.src || iframe.src === 'about:blank' || iframe.src === window.location.href)) {
@@ -146,21 +143,18 @@ measurementId: "G-S2YZN1CWLF"
       }
     });
 
-    // ポップアップログイン実行
+    // Googleポップアップログイン
     if (loginBtn) {
       loginBtn.onclick = async () => {
         try {
           await signInWithPopup(auth, provider);
         } catch (error) {
-          if (error.code !== 'auth/popup-closed-by-user') {
-            console.error("ログインエラー詳細:", error);
-            alert("ログインエラー: " + error.message);
-          }
+          console.error("ログインエラー:", error);
         }
       };
     }
 
-    // AIチャット送信処理
+    // AIチャット送信＆Firestore保存
     chatForm?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const message = chatInput.value.trim();
@@ -180,6 +174,7 @@ measurementId: "G-S2YZN1CWLF"
         
         appendMessage(data.reply || "応答を取得できませんでした。", 'ai');
 
+        // ログイン済みであればFirestoreに保存
         if (auth.currentUser) {
           await addDoc(collection(db, "tasks"), {
             uid: auth.currentUser.uid,
