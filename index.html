@@ -100,13 +100,13 @@
   </main>
 
   <!-- Firebase & スクリプト -->
-<script type="module">
+  <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
- const firebaseConfig = {
+const firebaseConfig = {
 apiKey: "AIzaSyC8nYLbZ0MNbnC_hfJ9uJirlaYGWnOMSBY",
 authDomain: "kouritsuapp-f4431.firebaseapp.com",
 projectId: "kouritsuapp-f4431",
@@ -121,7 +121,6 @@ measurementId: "G-S2YZN1CWLF"
     const auth = getAuth(app);
     const db = getFirestore(app);
     const provider = new GoogleAuthProvider();
-    // プロンプトを指定して確実にアカウント選択画面を開かせる
     provider.setCustomParameters({ prompt: 'select_account' });
 
     const loginBtn = document.getElementById('login-btn');
@@ -151,19 +150,66 @@ measurementId: "G-S2YZN1CWLF"
     if (loginBtn) {
       loginBtn.onclick = async () => {
         try {
-          // ポップアップを開く
-          const result = await signInWithPopup(auth, provider);
-          console.log("ログイン成功:", result.user);
+          await signInWithPopup(auth, provider);
         } catch (error) {
-          // ユーザーが手動で閉じた以外の本当のエラーだけを出力
           if (error.code !== 'auth/popup-closed-by-user') {
             console.error("ログインエラー詳細:", error);
             alert("ログインエラー: " + error.message);
-          } else {
-            console.log("ポップアップが途中で閉じられました");
           }
         }
       };
+    }
+
+    // AIチャット送信処理
+    chatForm?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const message = chatInput.value.trim();
+      if (!message) return;
+
+      appendMessage(message, 'user');
+      chatInput.value = '';
+
+      try {
+        const res = await fetch('https://kouritapp.onrender.com/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'AIサーバーでエラーが発生しました');
+        
+        appendMessage(data.reply || "応答を取得できませんでした。", 'ai');
+
+        if (auth.currentUser) {
+          await addDoc(collection(db, "tasks"), {
+            uid: auth.currentUser.uid,
+            prompt: message,
+            reply: data.reply,
+            createdAt: serverTimestamp()
+          });
+        }
+      } catch (err) {
+        console.error("API Error:", err);
+        appendMessage(`通信エラー: ${err.message}`, 'ai');
+      }
+    });
+
+    function appendMessage(text, sender) {
+      const isUser = sender === 'user';
+      const wrapper = document.createElement('div');
+      wrapper.className = `flex flex-col items-${isUser ? 'end' : 'start'}`;
+      
+      const msgDiv = document.createElement('div');
+      msgDiv.className = `max-w-[85%] p-3.5 text-sm leading-relaxed rounded-2xl ${
+        isUser 
+          ? 'bg-indigo-600 text-white rounded-tr-none shadow-sm shadow-indigo-100' 
+          : 'bg-indigo-50 text-indigo-900 border border-indigo-100 rounded-tl-none'
+      }`;
+      msgDiv.textContent = text;
+      
+      wrapper.appendChild(msgDiv);
+      chatHistory.appendChild(wrapper);
+      chatHistory.scrollTop = chatHistory.scrollHeight;
     }
   </script>
 </body>
