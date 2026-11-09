@@ -50,7 +50,7 @@
     <!-- 左右分割ワークスペース -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-1 min-h-[550px]">
       
-      <!-- 左：作業スペース (Google Docs iframe) -->
+      <!-- 左：作業スペース -->
       <div class="bg-white border border-slate-200 rounded-2xl flex flex-col overflow-hidden shadow-sm">
         <div class="bg-slate-50 px-4 py-3 border-b border-slate-200 flex justify-between items-center text-sm font-medium text-slate-600">
           <span>📝 作業スペース</span>
@@ -107,19 +107,15 @@
     const chatHistory = document.getElementById('chat-history');
     const iframe = document.getElementById('workspace-frame');
     
-    // アカウント切り替え画面へ直接アクセスできるURL
-    const docsEmbedUrl = "https://docs.google.com/document/u/0/?t=1";
+    // 埋め込み許可済みの新規Google Docs編集画面URL
+    const docsEmbedUrl = "https://docs.google.com/document/create?embedded=true";
 
-    // 最初から作業スペースを表示状態にしておく
-    window.addEventListener('DOMContentLoaded', () => {
-      if (iframe) iframe.src = docsEmbedUrl;
-    });
-
-    // 連携ボタンをクリックした時の表示切り替え
+    // 連携ボタンをクリックした時の処理（ボタン非表示・バッジ表示・Docs読み込み）
     loginBtn?.addEventListener('click', () => {
       loginBtn.classList.add('hidden');
       loginBadge.classList.remove('hidden');
       loginBadge.classList.add('flex');
+      iframe.src = docsEmbedUrl;
     });
 
     // AIチャット送信処理
