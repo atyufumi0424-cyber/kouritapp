@@ -107,15 +107,25 @@
     const chatHistory = document.getElementById('chat-history');
     const iframe = document.getElementById('workspace-frame');
     
-    // 埋め込み許可済みの新規Google Docs編集画面URL
-    const docsEmbedUrl = "https://docs.google.com/document/create?embedded=true";
+    // 誰でも表示可能な埋め込み公開URL
+    const docsEmbedUrl = "https://docs.google.com/document/d/e/2PACX-1vT1k0U9c6_Sg-G8X0W9hL_example/pub?embedded=true";
+    
+    // 外部のDocs新規作成用URL（クリックで開く用）
+    const docsCreateUrl = "https://docs.google.com/document/u/0/create";
 
-    // 連携ボタンをクリックした時の処理（ボタン非表示・バッジ表示・Docs読み込み）
     loginBtn?.addEventListener('click', () => {
       loginBtn.classList.add('hidden');
       loginBadge.classList.remove('hidden');
       loginBadge.classList.add('flex');
-      iframe.src = docsEmbedUrl;
+      
+      // ボタンを押したら新しいタブでGoogle Docsの新規作成を開きつつ、画面内には直接編集できるテキスト入力欄を展開
+      window.open(docsCreateUrl, '_blank');
+      
+      // 画面内の作業スペースをリッチな直接編集エリアに切り替え
+      const workspaceContainer = iframe.parentElement;
+      workspaceContainer.innerHTML = `
+        <textarea class="w-full h-full p-4 border-0 focus:outline-none text-slate-800 text-sm leading-relaxed resize-none bg-white" placeholder="ここにGoogle Docsで作成したアイデアやメモを貼り付け・直接編集できます..."></textarea>
+      `;
     });
 
     // AIチャット送信処理
